@@ -268,20 +268,20 @@ flowchart TD
     end
 
     %% Interactions
-    Client_Layer -->|HTTPS REST Requests| Auth_MW
+    Client_Layer -->|"HTTPS REST Requests"| Auth_MW
     Auth_MW --> Rate_Limiter
     Rate_Limiter --> Route_Handlers
-    Client_Layer <-->|Bi-directional WebSocket (ws://)| Socket_Server
+    Client_Layer <-->|"Bi-directional WebSocket"| Socket_Server
 
-    Route_Handlers -->|Mongoose 9 ODM| Data_Tier
-    Late_Monitor -->|Query Overdue Leaves| Data_Tier
+    Route_Handlers -->|"Mongoose 9 ODM"| Data_Tier
+    Late_Monitor -->|"Query Overdue Leaves"| Data_Tier
 
-    Route_Handlers -->|HTTP POST /extract-embedding /match-faces| AI_Tier
+    Route_Handlers -->|"Biometric REST API"| AI_Tier
     AI_Tier --> YuNet
     YuNet --> SFace
     SFace --> Cosine
 
-    Socket_Server -.->|Broadcast Alerts| Client_Layer
+    Socket_Server -.->|"Broadcast Alerts"| Client_Layer
 ```
 
 ---
@@ -698,7 +698,7 @@ erDiagram
         string date "YYYY-MM-DD"
         string session "NIGHT_ROLL_CALL | MORNING_ROLL_CALL"
         ObjectId markedBy FK
-        array students "List of { studentId, status: PRESENT|ABSENT }"
+        array students "List of student attendance entries"
         number totalStudents
         number presentCount
         number absentCount
@@ -769,11 +769,11 @@ sequenceDiagram
     Backend->>AI: POST /match-faces (live image + enrolled embedding)
     AI->>AI: Extract live face 128-D vector
     AI->>AI: Compute Cosine Distance Metric
-    alt Cosine Distance <= 0.38 (Confidence >= 70%)
+    alt Cosine Distance is within match threshold
         AI-->>Backend: { matched: true, distance: 0.24, confidence: 0.88 }
         Backend->>DB: Create MovementLog (EXIT) & Update Leave status
         Backend-->>Client: Verification Approved (Turnstile Clearance)
-    else Cosine Distance > 0.38
+    else Cosine Distance exceeds threshold
         AI-->>Backend: { matched: false, distance: 0.52, confidence: 0.48 }
         Backend-->>Client: Verification Denied (Identity Mismatch)
     end
