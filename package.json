@@ -1,0 +1,27 @@
+{
+  "name": "alts-hostel-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ALTS Hostel Portal - Anantha Lakshmi Institute of Technology & Sciences",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:face": "python face_service/service.py",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "start:backend": "npm --prefix backend run start",
+    "provision:user": "npm --prefix backend run provision:user",
+    "test:models": "node backend/verify-models.mjs",
+    "test:workflows": "node verify-workflows.mjs",
+    "test:auth": "node test-auth-suite.mjs",
+    "test:registration": "node test-registration-and-login-suite.mjs",
+    "test:face": "node test-face-recognition-suite.mjs",
+    "test:notifications": "node test-realtime-notifications-suite.mjs",
+    "test:profile": "node test-profile-management-suite.mjs",
+    "test:persistence": "node verify-live-mongodb-persistence.mjs",
+    "test:integration": "node verify-frontend-backend-integration.mjs"
+  }
+}

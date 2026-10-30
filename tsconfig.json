@@ -1,0 +1,7 @@
+{
+  "extends": "./frontend/tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src", "frontend/src"]
+}
