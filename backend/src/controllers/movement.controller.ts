@@ -32,7 +32,7 @@ export const getActivePasses = async (req: Request, res: Response): Promise<void
 
     const leaves = await LeaveApplication.find(findQuery)
       .sort({ departureTime: 1 })
-      .populate('student', 'fullName email rollNumber hostelName roomNumber phone');
+      .populate('student', 'fullName email rollNumber hostelName roomNumber phone photoUrl');
 
     let filtered = leaves;
     if (query && typeof query === 'string' && query.trim()) {
@@ -91,9 +91,16 @@ export const recordMovement = async (req: Request, res: Response): Promise<void>
     }
 
     // Locate active or associated leave
-    let leave = null;
+    let leave: any = null;
     if (leaveId) {
-      leave = await LeaveApplication.findById(leaveId);
+      if (mongoose.Types.ObjectId.isValid(leaveId)) {
+        leave = await LeaveApplication.findById(leaveId);
+      }
+      if (!leave) {
+        leave = await LeaveApplication.findOne({
+          $or: [{ customId: leaveId }, { 'metadata.leaveId': leaveId }],
+        });
+      }
     } else {
       // Find current open leave application
       leave = await LeaveApplication.findOne({
@@ -115,7 +122,8 @@ export const recordMovement = async (req: Request, res: Response): Promise<void>
         return;
       }
 
-      if (leave.status === LeaveStatus.CHECKED_OUT) {
+      const statusLower = String(leave.status || '').toLowerCase();
+      if (statusLower === 'checked_out') {
         res.status(400).json({
           success: false,
           message: 'Duplicate check-out prevented: Student is already marked as checked out',
@@ -123,7 +131,7 @@ export const recordMovement = async (req: Request, res: Response): Promise<void>
         return;
       }
 
-      if (leave.status !== LeaveStatus.APPROVED) {
+      if (statusLower !== 'approved') {
         res.status(400).json({
           success: false,
           message: `Check-out rejected: Leave status is ${leave.status}, not approved`,
@@ -138,7 +146,8 @@ export const recordMovement = async (req: Request, res: Response): Promise<void>
 
     // Validation rules for check_in (Prevent entry check-in without prior check-out)
     if (eventType === MovementType.CHECK_IN) {
-      if (!leave || leave.status !== LeaveStatus.CHECKED_OUT) {
+      const isCheckedOut = leave && ['checked_out', 'in_progress'].includes(String(leave.status || '').toLowerCase());
+      if (!isCheckedOut) {
         res.status(400).json({
           success: false,
           message: 'Check-in rejected: Student has no active checked-out pass or movement record to return from',

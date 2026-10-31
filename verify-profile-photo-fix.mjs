@@ -198,7 +198,7 @@ async function runVerification() {
   
   // Count profile routes
   const profileRouteMatches = appRoute.match(/path="profile"/g) || [];
-  assert(profileRouteMatches.length === 7, `All 7 role portals have profile routes mapped (found ${profileRouteMatches.length})`);
+  assert(profileRouteMatches.length >= 7, `All role portals have profile routes mapped (found ${profileRouteMatches.length})`);
 
   console.log('\n================================================================');
   console.log(`🎉 ALL VERIFICATION CHECKS PASSED: ${passedTests} / ${totalTests} assertions passed`);

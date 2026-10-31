@@ -413,7 +413,12 @@ export const GateSecurityOverviewPage: React.FC = () => {
                     const rollNo = student.rollNumber || leave.studentRollNo || 'N/A';
                     const hostel = student.hostelName || leave.hostelName || 'Hostel Campus';
                     const room = student.roomNumber || leave.roomNumber || 'N/A';
-                    const photo = student.photoUrl || leave.studentPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
+                    const photo =
+                      leave.biometricTemplate?.capturedFacePreview ||
+                      leave.capturedFacePreview ||
+                      student.photoUrl ||
+                      leave.studentPhoto ||
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
                     const passId = leave._id || leave.id;
                     const rawStatus = (leave.status || '').toLowerCase();
 

@@ -147,7 +147,12 @@ export const GateBiometricVerificationModal: React.FC<GateBiometricVerificationM
   const roomNumber = student.roomNumber || leave.roomNumber || 'N/A';
   const leaveId = leave._id || leave.id;
   const leaveType = (leave.leaveType || 'Leave').toUpperCase().replace('_', ' ');
-  const studentPhoto = student.photoUrl || leave.studentPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
+  const studentPhoto =
+    leave.biometricTemplate?.capturedFacePreview ||
+    leave.capturedFacePreview ||
+    student.photoUrl ||
+    leave.studentPhoto ||
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
 
   // Format schedules
   const depTimeFormatted = leave.departureTime

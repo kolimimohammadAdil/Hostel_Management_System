@@ -150,9 +150,18 @@ export const applyLeave = async (req: Request, res: Response): Promise<void> => 
         status: 'enrolled',
         consentGiven: true,
         consentTimestamp: new Date(),
-        capturedFacePreview: biometricFrame.length < 80000 ? biometricFrame : undefined,
+        capturedFacePreview: biometricFrame,
       },
     });
+
+    // If student user does not have a profile photo, link the captured biometric face
+    if (!student.photoUrl) {
+      await User.findByIdAndUpdate(student._id, {
+        photoUrl: biometricFrame,
+        faceEmbedding: embedding,
+        faceEnrolledAt: new Date(),
+      });
+    }
 
     // Create a notification for the warden
     const studentHostelLower = (student.hostelName || '').toLowerCase();

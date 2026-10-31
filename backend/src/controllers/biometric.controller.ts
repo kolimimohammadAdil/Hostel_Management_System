@@ -469,16 +469,31 @@ export const verifyLeaveCheckout = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const leave = await LeaveApplication.findById(leaveId)
-      .select('+biometricTemplate.embedding')
-      .populate('student');
+    let leave: any = null;
+    if (mongoose.Types.ObjectId.isValid(leaveId)) {
+      leave = await LeaveApplication.findById(leaveId)
+        .select('+biometricTemplate.embedding')
+        .populate('student');
+    }
+    if (!leave) {
+      leave = await LeaveApplication.findOne({
+        $or: [
+          { _id: mongoose.Types.ObjectId.isValid(leaveId) ? leaveId : undefined },
+          { customId: leaveId },
+          { 'metadata.leaveId': leaveId },
+        ].filter(Boolean),
+      })
+        .select('+biometricTemplate.embedding')
+        .populate('student');
+    }
 
     if (!leave) {
       res.status(404).json({ success: false, message: 'Leave application not found' });
       return;
     }
 
-    if (leave.status !== LeaveStatus.APPROVED) {
+    const isApproved = String(leave.status || '').toLowerCase() === 'approved';
+    if (!isApproved) {
       res.status(400).json({
         success: false,
         canClearGate: false,
@@ -487,7 +502,28 @@ export const verifyLeaveCheckout = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const templateEmbedding = leave.biometricTemplate?.embedding;
+    let templateEmbedding = leave.biometricTemplate?.embedding;
+    if (!Array.isArray(templateEmbedding) || templateEmbedding.length !== 128) {
+      const studentDoc = leave.student as any;
+      if (studentDoc && Array.isArray(studentDoc.faceEmbedding) && studentDoc.faceEmbedding.length === 128) {
+        templateEmbedding = studentDoc.faceEmbedding;
+      } else if (leave.biometricTemplate?.capturedFacePreview || studentDoc?.photoUrl) {
+        try {
+          const faceToExtract = leave.biometricTemplate?.capturedFacePreview || studentDoc?.photoUrl;
+          const resExt = await extractFaceEmbedding(faceToExtract);
+          if (resExt.success && resExt.embedding) {
+            templateEmbedding = resExt.embedding;
+            if (leave.biometricTemplate) {
+              leave.biometricTemplate.embedding = resExt.embedding;
+              await leave.save();
+            }
+          }
+        } catch (e) {
+          console.warn('[Biometric Controller] Failed on-the-fly extraction of enrolled face preview:', e);
+        }
+      }
+    }
+
     if (!Array.isArray(templateEmbedding) || templateEmbedding.length !== 128) {
       res.status(400).json({
         success: false,
@@ -628,16 +664,31 @@ export const verifyLeaveCheckin = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const leave = await LeaveApplication.findById(leaveId)
-      .select('+biometricTemplate.embedding')
-      .populate('student');
+    let leave: any = null;
+    if (mongoose.Types.ObjectId.isValid(leaveId)) {
+      leave = await LeaveApplication.findById(leaveId)
+        .select('+biometricTemplate.embedding')
+        .populate('student');
+    }
+    if (!leave) {
+      leave = await LeaveApplication.findOne({
+        $or: [
+          { _id: mongoose.Types.ObjectId.isValid(leaveId) ? leaveId : undefined },
+          { customId: leaveId },
+          { 'metadata.leaveId': leaveId },
+        ].filter(Boolean),
+      })
+        .select('+biometricTemplate.embedding')
+        .populate('student');
+    }
 
     if (!leave) {
       res.status(404).json({ success: false, message: 'Leave application not found' });
       return;
     }
 
-    if (leave.status !== LeaveStatus.CHECKED_OUT) {
+    const isCheckedOut = ['checked_out', 'in_progress'].includes(String(leave.status || '').toLowerCase());
+    if (!isCheckedOut) {
       res.status(400).json({
         success: false,
         canClearGate: false,
@@ -646,7 +697,24 @@ export const verifyLeaveCheckin = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const templateEmbedding = leave.biometricTemplate?.embedding;
+    let templateEmbedding = leave.biometricTemplate?.embedding;
+    if (!Array.isArray(templateEmbedding) || templateEmbedding.length !== 128) {
+      const studentDoc = leave.student as any;
+      if (studentDoc && Array.isArray(studentDoc.faceEmbedding) && studentDoc.faceEmbedding.length === 128) {
+        templateEmbedding = studentDoc.faceEmbedding;
+      } else if (leave.biometricTemplate?.capturedFacePreview || studentDoc?.photoUrl) {
+        try {
+          const faceToExtract = leave.biometricTemplate?.capturedFacePreview || studentDoc?.photoUrl;
+          const resExt = await extractFaceEmbedding(faceToExtract);
+          if (resExt.success && resExt.embedding) {
+            templateEmbedding = resExt.embedding;
+          }
+        } catch (e) {
+          console.warn('[Biometric Controller] Failed on-the-fly extraction for return checkin:', e);
+        }
+      }
+    }
+
     if (!Array.isArray(templateEmbedding) || templateEmbedding.length !== 128) {
       res.status(400).json({
         success: false,

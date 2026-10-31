@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { GatePassModal } from '../../components/common/GatePassModal';
 import { Avatar } from '../../components/common/Avatar';
+import { LeaveBiometricCapture } from '../../components/common/LeaveBiometricCapture';
 import { checkLeaveValidity } from '../../data/demoData';
 import { 
   FilePlus, 
@@ -47,6 +48,8 @@ export const StudentDashboard: React.FC = () => {
   const [reason, setReason] = useState('');
   const [destinationAddress, setDestinationAddress] = useState('');
   const [parentContactVerified, setParentContactVerified] = useState(true);
+  const [biometricConsent, setBiometricConsent] = useState(false);
+  const [biometricFrame, setBiometricFrame] = useState<string>('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Filter & Search state
@@ -126,12 +129,16 @@ export const StudentDashboard: React.FC = () => {
       reason,
       destinationAddress,
       parentContactVerified,
+      biometricFrame,
+      biometricConsent,
     });
 
     if (success) {
       setIsApplyModalOpen(false);
       setReason('');
       setDestinationAddress('');
+      setBiometricFrame('');
+      setBiometricConsent(false);
       setFormErrors({});
     }
   };
@@ -738,6 +745,43 @@ export const StudentDashboard: React.FC = () => {
               <span className="text-[10px] text-rose-500">{formErrors.destinationAddress}</span>
             )}
           </div>
+
+          {/* Facial Biometric Enrollment Section */}
+          <LeaveBiometricCapture
+            onCaptureSuccess={(verifiedFrame) => {
+              setBiometricFrame(verifiedFrame);
+              setFormErrors((prev) => ({ ...prev, biometricFrame: '' }));
+            }}
+            onReset={() => {
+              setBiometricFrame('');
+            }}
+            capturedPreview={biometricFrame}
+            isModalOpen={isApplyModalOpen}
+          />
+          {formErrors.biometricFrame && (
+            <p className="text-[11px] text-rose-500 mt-1">{formErrors.biometricFrame}</p>
+          )}
+
+          {/* Mandatory Biometric Consent */}
+          <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 cursor-pointer mt-2">
+            <input
+              type="checkbox"
+              checked={biometricConsent}
+              onChange={(e) => {
+                setBiometricConsent(e.target.checked);
+                if (e.target.checked) {
+                  setFormErrors((prev) => ({ ...prev, biometricConsent: '' }));
+                }
+              }}
+              className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+            <span className="text-[11px] text-slate-700 dark:text-slate-300 leading-tight">
+              <strong>Mandatory Biometric Consent:</strong> I explicitly consent to facial biometric capture and verification. I understand this 128-D template is tied specifically to this leave pass and used for both Gate Checkout and Return Check-in.
+            </span>
+          </label>
+          {formErrors.biometricConsent && (
+            <p className="text-[11px] text-rose-500 mt-1">{formErrors.biometricConsent}</p>
+          )}
 
           <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5">
             <input

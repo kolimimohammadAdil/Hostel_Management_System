@@ -535,6 +535,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               studentName: student.fullName || 'Resident Student',
               studentRollNo: student.rollNumber || 'ALTS-STUDENT',
               studentPhoto:
+                l.biometricTemplate?.capturedFacePreview ||
                 student.photoUrl ||
                 (isFemale
                   ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400'
